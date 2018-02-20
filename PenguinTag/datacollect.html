@@ -1,0 +1,1107 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Penguin Tag</title>
+    <link rel="icon" type="image/png" href="icon.png" sizes="32x32" />
+	<script type='text/javascript'>
+
+	var canvasPenguin;
+	var ctxPenguin;
+	var canvasSnowball;
+	var ctxSnowball;
+	var canvasEnemy;
+	var ctxEnemy;
+	var gameWidth = 600;
+	var gameHeight = 530;
+	var imgSprite = new Image();
+	var penguins;
+	var enemies;
+	var time = 10;
+	var game;
+	var p1rdy;
+	var p2rdy;
+	var p1shot;
+	var p2shot;
+	var p1lives;
+	var p2lives;
+	var gameoverScreenY = -116;
+	var gameoverScreenPhase = 0;
+	var loser;
+	var oldLoser;
+	var winner;
+	var vectorLabel;
+	var recording = false;
+	var recordButton;
+	var outputCount = 0;
+	var writeMS = 100;
+	var writeEntry;
+	imgSprite.src = 'images.png';
+	var outputString = "";
+	var outputBox;
+
+	function init()
+	{
+		canvasPenguin = document.getElementById('canvasPenguin');
+		ctxPenguin = canvasPenguin.getContext('2d');
+		canvasSnowball = document.getElementById('canvasSnowball');
+		ctxSnowball = canvasSnowball.getContext('2d');
+		canvasEnemy = document.getElementById('canvasEnemy');
+		ctxEnemy = canvasEnemy.getContext('2d');
+		vectorLabel = document.getElementById('vectorLabel');
+		recordButton = document.getElementById('recordButton');
+		writeEntry = document.getElementById('writeMS');
+		outputBox = document.getElementById('outputBox');
+	    startGame();
+	    loop();
+	    write();
+	}
+
+	function record()
+	{
+		if(!recording){
+			if(writeEntry.value != "" && !isNaN(writeEntry.value)){
+				writeMS = 1000/parseInt(writeEntry.value);
+			}
+			else{
+				writeMS = 100;
+			}
+			recording = true;
+			outputCount = 0;
+			outputString = "";
+			recordButton.innerHTML = "Stop Recording"
+		}
+		else if(recording){
+			outputBox.innerHTML = outputString;
+			recording = false;
+			recordButton.innerHTML = "Start Recording"
+		}
+		else{
+			recordButton.innerHTML = "Start Recording"
+		}
+	}
+
+	function write(){
+		if(game && recording){
+			outputCount += 1;
+			outputString += makeVector()+"\n";
+		}
+		else if(!recording){
+		}
+		if(recording){
+			vectorLabel.innerHTML = "Recorded "+outputCount+" states";
+		}
+		window.setTimeout('write()', writeMS);
+	}
+
+	function makeVector(){
+		var output = penguins[1].lastKey+"|"+penguins[0].lastKey+"|"+vectorizePenguin(penguins[1])+"|"+p1lives+"|"+vectorizePenguin(penguins[0])+"|"+p2lives+"|"+vectorizeEnemyPenguin(enemies[0])+"|"+vectorizeEnemyPenguin(enemies[1])+"|"+vectorizeEnemyPenguin(enemies[2])+"|"+vectorizeEnemyPenguin(enemies[3])+"|"+vectorizeSnowballs(penguins[1])+"|"+vectorizeSnowballs(penguins[0]);
+		penguins[1].lastKey = -1;
+		penguins[0].lastKey = -1;
+		return output;
+	}
+
+	function vectorizePenguin(penguin){
+		return penguin.x+"|"+penguin.y+"|"+numerizeDirection(penguin.direction)+"|"+penguin.speed;
+	}
+
+	function vectorizeEnemyPenguin(enemyPenguin){
+		return enemyPenguin.x+"|"+enemyPenguin.y+"|"+numerizeDirection(enemyPenguin.direction)+"|"+enemyPenguin.player;
+	}
+
+	function vectorizeSnowballs(penguin){
+		var output = "";
+		var snowballCount = 0;
+		for(var x = 0; x < penguin.snowballs.length; x++){
+			if(penguin.snowballs[x].live == "true" && snowballCount < 4){
+				output += penguin.snowballs[x].x+"|"+penguin.snowballs[x].y+"|"+numerizeDirection(penguin.snowballs[x].direction);
+				snowballCount+=1;
+				if(snowballCount != 3){
+					output += "|";
+				}
+			}
+		}
+		for(var y = snowballCount; y < 4; y++){
+			output += "-1|-1|-1"
+			if(y != 3){
+				output += "|";
+			}
+		}
+		return output;
+	}
+
+	function numerizeDirection(direction){
+		if(direction == "up"){
+			return 0;
+		}
+		if(direction == "right"){
+			return 1;
+		}
+		if(direction == "down"){
+			return 2;
+		}
+		if(direction == "left"){
+			return 3;
+		}
+	}
+	function startGame()
+	{
+	    enemies = [new Enemy(10,10,'right',1), new Enemy(10,gameHeight-88,'right',1),new Enemy(gameWidth-60,10,'left',2), new Enemy(gameWidth-60,gameHeight-88,'left',2)];
+	    penguins = [new Penguin(gameWidth-100-51,gameHeight/2-25,'left',2), new Penguin(100,gameHeight/2-25,'right',1)];
+	    loser = -1;
+	    winner = 0;
+	    game = false;
+	    p1rdy = false;
+	    p2rdy = false;
+	    p1shot = false;
+	    p2shot = false;
+	    p1lives = 3;
+	    p2lives = 3;
+	    for(var x = 0; x < enemies.length; x++)
+	    { 
+	        enemies[x].speed = 0;
+	    }
+	    for(var x = 0; x < penguins.length; x++)
+	    { 
+	        penguins[x].speed = 0;
+	    }
+	    document.addEventListener('keydown', checkKeyDown, false);
+	    document.addEventListener('keyup', checkKeyUp, false);
+	}
+
+
+	function loop()
+	{
+	    ctxPenguin.clearRect(0,0,gameWidth,gameHeight);
+	    ctxSnowball.clearRect(0,0,gameWidth,gameHeight);
+	    ctxEnemy.clearRect(0,0,gameWidth,gameHeight);
+	    if(p1rdy && p2rdy && !game)
+	    {
+	        for(var x = 0; x < enemies.length; x++)
+	        { 
+	            enemies[x].speed = 2;
+	        }
+	        for(var x = 0; x < penguins.length; x++)
+	        { 
+	            penguins[x].speed = 4;
+	        }
+	        game = true;
+	    }
+	    ctxSnowball.drawImage(imgSprite, 1, 115, 600, 28, 0, gameHeight-27, 600, 28);
+	    if(!game && loser == -1){
+	        ctxSnowball.drawImage(imgSprite, 159, 48, 254, 6, gameWidth/2-254/2, (gameHeight-28)/2+10, 254, 6);
+	        if(p1shot){
+	            ctxSnowball.drawImage(imgSprite, 414, 48, 35, 6, 14, gameHeight-16, 35, 6);
+	        }
+	        if(p2shot){
+	            ctxSnowball.drawImage(imgSprite, 414, 48, 35, 6, gameWidth-49, gameHeight-16, 35, 6);
+	        }
+	    }
+	    if(game || loser == 1){
+	        if(p1lives == 1){
+	            ctxSnowball.drawImage(imgSprite, 145, 48, 13, 11, 24, gameHeight-18, 13, 11);
+	        }
+	        if(p1lives == 2){
+	            ctxSnowball.drawImage(imgSprite, 145, 48, 13, 11, 17, gameHeight-18, 13, 11);
+	            ctxSnowball.drawImage(imgSprite, 145, 48, 13, 11, 33, gameHeight-18, 13, 11);
+	        }
+	        if(p1lives == 3){
+	            ctxSnowball.drawImage(imgSprite, 145, 48, 13, 11, 8, gameHeight-18, 13, 11);
+	            ctxSnowball.drawImage(imgSprite, 145, 48, 13, 11, 24, gameHeight-18, 13, 11);
+	            ctxSnowball.drawImage(imgSprite, 145, 48, 13, 11, 40, gameHeight-18, 13, 11);
+	        }
+	        if(p2lives == 1){
+	            ctxSnowball.drawImage(imgSprite, 145, 48, 13, 11, gameWidth-37, gameHeight-18, 13, 11);
+	        }
+	        if(p2lives == 2){
+	            ctxSnowball.drawImage(imgSprite, 145, 48, 13, 11, gameWidth-30, gameHeight-18, 13, 11);
+	            ctxSnowball.drawImage(imgSprite, 145, 48, 13, 11, gameWidth-46, gameHeight-18, 13, 11);
+	        }
+	        if(p2lives == 3){
+	            ctxSnowball.drawImage(imgSprite, 145, 48, 13, 11, gameWidth-21, gameHeight-18, 13, 11);
+	            ctxSnowball.drawImage(imgSprite, 145, 48, 13, 11, gameWidth-37, gameHeight-18, 13, 11);
+	            ctxSnowball.drawImage(imgSprite, 145, 48, 13, 11, gameWidth-53, gameHeight-18, 13, 11);
+	        }
+	    }
+	    for(var x = 0; x < penguins.length; x++)
+	    {
+	        penguins[x].draw();
+	    }
+	    for(var x = 0; x < enemies.length; x++)
+	    { 
+	        if(enemies[x].live)
+	        enemies[x].draw();
+	    }
+	    if(game == true && (p1lives <= 0 || p2lives <= 0))
+	    {
+	        gameoverScreenY = -116;
+	        game = false;
+	        p1rdy = false;
+	        p1shot = false;
+	        p2rdy = false;
+	        p2shot = false;
+	        loser = 1;
+	        if(p2lives <= 0)
+	        {
+	            for(var a = 0; a < enemies.length; a++)
+	            { 
+	                if(enemies[a].player-1 != 0)
+	                {
+	                    enemies[a].speed = 0;
+	                }
+	            }
+	            winner = 1;
+	            oldLoser = 2;
+	            penguins[0].speed = 0;
+	            penguins[1].speed = 4;
+	        }
+	        else
+	        {
+	            for(var a = 0; a < enemies.length; a++)
+	            { 
+	                if(enemies[a].player-1 != 1)
+	                {
+	                    enemies[a].speed = 0;
+	                }
+	            }
+	            winner = 2;
+	            oldLoser = 1;
+	            penguins[1].speed = 0;
+	            penguins[0].speed = 4;
+	        }
+	    }
+	    if(!game){
+	        if(loser == 1){
+	            if(gameoverScreenY < gameHeight/2-58){
+	                gameoverScreenY+=25;
+	            }
+	        }
+	        if(loser == -1){
+	            if(gameoverScreenY < gameHeight){
+	                gameoverScreenY+=25;
+	            }
+	        }
+	        if(oldLoser == 2){
+	            ctxSnowball.drawImage(imgSprite, 1, 144, 250, 116, gameWidth/2-125, gameoverScreenY, 250, 116);
+	        }
+	        else if(oldLoser == 1){
+	            ctxSnowball.drawImage(imgSprite, 252, 144, 250, 116, gameWidth/2-125, gameoverScreenY, 250, 116);
+	        }
+	    }
+	    collide();
+	    window.setTimeout('loop()', 20);
+	}
+
+	function collide()
+	{
+	    for(var x = 0; x < penguins.length; x++)
+	    {
+	        var snowballtol = 15;
+	        for(var s = 0; s < penguins[x].snowballs.length; s++)
+	        { 
+	            for(var e = 0; e < penguins.length; e++)
+	            { 
+	                if(x != e)
+	                {
+	                    if(penguins[x].snowballs[s].live == 'true')
+	                    {
+	                        if((penguins[x].snowballs[s].x >= penguins[e].x && penguins[x].snowballs[s].x <= penguins[e].x+42) || (penguins[x].snowballs[s].x <= penguins[e].x && penguins[x].snowballs[s].x+15 >= penguins[e].x))
+	                        {
+	                            if((penguins[x].snowballs[s].y >= penguins[e].y && penguins[x].snowballs[s].y <= penguins[e].y+47) || (penguins[x].snowballs[s].y <= penguins[e].y && penguins[x].snowballs[s].y+15 >= penguins[e].y))
+	                            {
+	                                if(penguins[x].snowballs[s].direction == 'left')
+	                                {
+	                                    penguins[x].snowballs[s].x-=snowballtol;    
+	                                }
+	                                if(penguins[x].snowballs[s].direction == 'right')
+	                                {
+	                                    penguins[x].snowballs[s].x+=snowballtol;    
+	                                }
+	                                if(penguins[x].snowballs[s].direction == 'up')
+	                                {
+	                                    penguins[x].snowballs[s].y-=snowballtol;    
+	                                }
+	                                if(penguins[x].snowballs[s].direction == 'down')
+	                                {
+	                                    penguins[x].snowballs[s].y+=snowballtol;    
+	                                }
+	                                penguins[x].snowballs[s].live = 'dying';
+	                                if(game)
+	                                {
+	                                    if(Math.random() < .5)
+	                                    {                                        
+	                                        penguins[e].speed -= 1;
+	                                    }
+	                                    if(penguins[e].speed < 0)
+	                                    {
+	                                        penguins[e].speed = 0;
+	                                    }
+	                                }
+	                                else
+	                                {
+	                                    if(x == 0)
+	                                    {
+	                                        p1rdy = true;
+	                                    }
+	                                    else
+	                                    {
+	                                        p2rdy = true;
+	                                    }
+	                                }
+	                            }
+	                        }
+	                    }
+	                }
+	            }
+	        }
+	        if(game)
+	        {
+	            var snowballtol = 15;
+	            for(var s = 0; s < penguins[x].snowballs.length; s++)
+	            { 
+	                for(var e = 0; e < enemies.length; e++)
+	                { 
+	                    if(penguins[x].snowballs[s].live == 'true' && enemies[e].player != penguins[x].player)
+	                    {
+	                        if((penguins[x].snowballs[s].x >= enemies[e].x && penguins[x].snowballs[s].x <= enemies[e].x+42) || (penguins[x].snowballs[s].x <= enemies[e].x && penguins[x].snowballs[s].x+15 >= enemies[e].x))
+	                        {
+	                            if((penguins[x].snowballs[s].y >= enemies[e].y && penguins[x].snowballs[s].y <= enemies[e].y+47) || (penguins[x].snowballs[s].y <= enemies[e].y && penguins[x].snowballs[s].y+15 >= enemies[e].y))
+	                            {
+	                                if(penguins[x].snowballs[s].direction == 'left')
+	                                {
+	                                    penguins[x].snowballs[s].x-=snowballtol;    
+	                                }
+	                                if(penguins[x].snowballs[s].direction == 'right')
+	                                {
+	                                    penguins[x].snowballs[s].x+=snowballtol;    
+	                                }
+	                                if(penguins[x].snowballs[s].direction == 'up')
+	                                {
+	                                    penguins[x].snowballs[s].y-=snowballtol;    
+	                                }
+	                                if(penguins[x].snowballs[s].direction == 'down')
+	                                {
+	                                    penguins[x].snowballs[s].y+=snowballtol;    
+	                                }
+	                                penguins[x].snowballs[s].live = 'dying';
+	                                if(enemies[e].player == 1)
+	                                {
+	                                    enemies[e].player = 2;
+	                                }
+	                                else if(enemies[e].player == 2)
+	                                {
+	                                    enemies[e].player = 1;
+	                                }
+	                                enemies[e].py = (enemies[e].player-1)*67;
+	                            }
+	                        }
+	                    }
+	                }
+	            }
+	            for(var e1 = 0; e1 < enemies.length; e1++)
+	            { 
+	                enemies[e1].speed = 2;
+	                for(var e2 = e1+1; e2 < enemies.length; e2++)
+	                { 
+	                    if(enemies[e1].player == enemies[e2].player)
+	                    {
+	                        if(e1 != e2)
+	                        {
+	                            if((enemies[e1].x >= enemies[e2].x && enemies[e1].x <= enemies[e2].x+42) || (enemies[e2].x >= enemies[e1].x && enemies[e2].x <= enemies[e1].x+42))
+	                            {
+	                                if((enemies[e1].y >= enemies[e2].y && enemies[e1].y <= enemies[e2].y+47) || (enemies[e2].y >= enemies[e1].y && enemies[e2].y <= enemies[e1].y+47))
+	                                {
+	                                    if(enemies[e1].direction == enemies[e2].direction)
+	                                    {
+	                                        enemies[e1].speed = 1;
+	                                    }
+	                                }
+	                            }
+	                        }
+	                    }
+	                }
+	            }
+	            for(var e = 0; e < enemies.length; e++)
+	            {
+	                if(enemies[e].player != penguins[x].player)
+	                {
+	                    if((enemies[e].x >= penguins[x].x && enemies[e].x <= penguins[x].x+42) || (penguins[x].x >= enemies[e].x && penguins[x].x <= enemies[e].x+42))
+	                    {
+	                        if((enemies[e].y >= penguins[x].y && enemies[e].y <= penguins[x].y+47) || (penguins[x].y >= enemies[e].y && penguins[x].y <= enemies[e].y+47))
+	                        {
+	                            if(x == 0 && penguins[x].ic == -1)
+	                            {
+	                                penguins[x].ic = 0;
+	                                p2lives -= 1;
+	                            }
+	                            else if(x == 1 && penguins[x].ic == -1)
+	                            {
+	                                penguins[x].ic = 0;
+	                                p1lives -= 1;
+	                            }
+	                        }
+	                    }
+	                }
+	            }
+	        }
+	    }
+	}
+
+
+	function checkKeyDown(e)
+	{
+	    var keyID = e.keyCode;
+	    if(keyID == 32 && loser != -1)
+	    {
+	        startGame();
+	    }
+	    if (keyID == 87)
+	    {
+	        penguins[1].direction = 'up';
+	        penguins[1].lastKey = 0;
+	        e.preventDefault();
+	    }
+	    if (keyID == 68)
+	    { //right arrow or D key
+	        penguins[1].direction = 'right';
+	        penguins[1].lastKey = 1;
+	        e.preventDefault();
+	    }
+	    if (keyID == 83)
+	    { //down arrow or S key
+	        penguins[1].direction = 'down';
+	        penguins[1].lastKey = 2;
+	        e.preventDefault();
+	    }
+	    if (keyID == 65)
+	    { //left arrow or A key
+	        penguins[1].direction = 'left';
+	        penguins[1].lastKey = 3;
+	        e.preventDefault();
+	    }
+	    if (keyID == 71)
+	    { //spacebar
+	        if(game == true || (game == false && p1shot == false && penguins[1].direction == 'right' && loser == -1))
+	        {
+	        	penguins[1].lastKey = 4;
+	            p1shot = true;
+	            if(penguins[1].tac < 0)
+	            {
+	                penguins[1].tac = 0;
+	                if(penguins[1].direction == 'left')
+	                {
+	                    penguins[1].snowballs[penguins[1].snowballs.length]=new Snowball(penguins[1].x+19-8,penguins[1].y+30,'left');
+	                }
+	                if(penguins[1].direction == 'right')
+	                {
+	                    penguins[1].snowballs[penguins[1].snowballs.length]=new Snowball(penguins[1].x+24-8,penguins[1].y+30,'right');
+	                }
+	                if(penguins[1].direction == 'up')
+	                {
+	                    penguins[1].snowballs[penguins[1].snowballs.length]=new Snowball(penguins[1].x+21-8,penguins[1].y-5,'up');
+	                }
+	                if(penguins[1].direction == 'down')
+	                {
+	                    penguins[1].snowballs[penguins[1].snowballs.length]=new Snowball(penguins[1].x+21-8,penguins[1].y+40,'down');
+	                }
+	                if(penguins[1].ta == 'right')
+	                {
+	                    penguins[1].ta = 'left';
+	                }
+	                else
+	                {
+	                    penguins[1].ta = 'right';
+	                }
+	            }
+	        }
+	        e.preventDefault();
+	    }
+	    if (keyID == 38)
+	    {
+	        penguins[0].direction = 'up';
+	        penguins[0].lastKey = 0;
+	        e.preventDefault();
+	    }
+	    if (keyID == 39)
+	    { //right arrow or D key
+	        penguins[0].direction = 'right';
+	        penguins[0].lastKey = 1;
+	        e.preventDefault();
+	    }
+	    if (keyID == 40)
+	    { //down arrow or S key
+	        penguins[0].direction = 'down';
+	        penguins[0].lastKey = 2;
+	        e.preventDefault();
+	    }
+	    if (keyID == 37)
+	    { //left arrow or A key
+	        penguins[0].direction = 'left';
+	        penguins[0].lastKey = 3;
+	        e.preventDefault();
+	    }
+	    if (keyID == 18)
+	    { //spacebar
+	        if(game == true || (game == false && p2shot == false && penguins[0].direction == 'left' && loser == -1))
+	        {
+	        	penguins[0].lastKey = 4;
+	            p2shot = true;
+	            if(penguins[0].tac < 0)
+	            {
+	                penguins[0].tac = 0;
+	                if(penguins[0].direction == 'left')
+	                {
+	                    penguins[0].snowballs[penguins[0].snowballs.length]=new Snowball(penguins[0].x+19-8,penguins[0].y+30,'left');
+	                }
+	                if(penguins[0].direction == 'right')
+	                {
+	                    penguins[0].snowballs[penguins[0].snowballs.length]=new Snowball(penguins[0].x+24-8,penguins[0].y+30,'right');
+	                }
+	                if(penguins[0].direction == 'up')
+	                {
+	                    penguins[0].snowballs[penguins[0].snowballs.length]=new Snowball(penguins[0].x+21-8,penguins[0].y-5,'up');
+	                }
+	                if(penguins[0].direction == 'down')
+	                {
+	                    penguins[0].snowballs[penguins[0].snowballs.length]=new Snowball(penguins[0].x+21-8,penguins[0].y+40,'down');
+	                }
+	                if(penguins[0].ta == 'right')
+	                {
+	                    penguins[0].ta = 'left';
+	                }
+	                else
+	                {
+	                    penguins[0].ta = 'right';
+	                }
+	            }
+	        }
+	        e.preventDefault();
+	    }
+	}
+
+
+	function checkKeyUp(e)
+	{
+	    var keyID = e.keyCode || e.which;
+	    if (keyID === 38 || keyID === 87)
+	    { //up arrow or W key
+	        e.preventDefault();
+	    }
+	    if (keyID === 39 || keyID === 68)
+	    { //right arrow or D key
+	        e.preventDefault();
+	    }
+	    if (keyID === 40 || keyID === 83)
+	    { //down arrow or S key
+	        e.preventDefault();
+	    }
+	    if (keyID === 37 || keyID === 65)
+	    { //left arrow or A key
+	        e.preventDefault();
+	    }
+	    if (keyID === 32) { //spacebar
+	        e.preventDefault();
+	    }
+	}
+
+
+	function Penguin(x,y,dir,play)
+	{
+
+	    this.direction = dir;
+	    this.x = x;
+	    this.y = y;
+	    this.py = (play-1)*67;
+	    this.ay = (play-1)*5+47
+	    this.speed = 0;
+	    this.sac = 0;
+	    this.sacc = 140;
+	    this.ta = 'left';
+	    this.tac = -1;
+	    this.tacc = 60;
+	    this.ic = -1;
+	    this.icc = 200;
+	    this.icx = 0;
+	    this.iccc = 3000;
+	    this.snowballs = [];
+	    this.player = play;
+	    this.lastKey = 0;
+
+
+	    Penguin.prototype.draw = function()
+	    {
+	        if(this.ic >= 0 && p1lives > 0 && p2lives > 0)
+	        {
+	            this.ic+=20;
+	            this.speed = 6;
+	            if(parseInt(this.ic/this.icc)%2 == 0)
+	            {
+	                this.icx = 336;
+	            }
+	            else
+	            {
+	                this.icx = 0;
+	            }
+	            if(this.ic > this.iccc)
+	            {
+	                this.speed = 4;
+	                this.ic=-1;
+	                this.icx = 0;
+	            }
+	        }
+	        this.sac += 20;
+	        if(this.sac > this.sacc*4)
+	        {
+	            this.sac = 0;
+	        }
+	        if(this.direction == 'up')
+	        {
+	            this.y -= this.speed;
+	        }
+	        if(this.direction == 'down')
+	        {
+	            this.y += this.speed;
+	        }
+	        if(this.direction == 'left')
+	        {
+	            this.x -= this.speed;
+	        }
+	        if(this.direction == 'right')
+	        {
+	            this.x += this.speed;
+	        }
+	        if(this.x < 2)
+	        {
+	            this.x = 2;
+	        }
+	        if(this.x > gameWidth-45)
+	        {
+	            this.x = gameWidth-45;
+	        }
+	        if(this.y < -1)
+	        {
+	            this.y = -1;
+	        }
+	        if(this.y > gameHeight - 76)
+	        {
+	            this.y = gameHeight-76;
+	        }
+	        if(this.tac >= 0)
+	        {
+	            this.tac += 20;
+	            if(this.tac > this.tacc*5)
+	            {
+	                this.tac = -1;
+	            }
+	        }
+	        if(this.direction == 'up')
+	        {
+	            ctxPenguin.drawImage(imgSprite, 126+this.icx, this.py, 43, 48, this.x, this.y, 43, 48);
+	            if(!(0 <= this.sac && this.sac < this.sacc) || this.speed == 0)
+	            {
+	                ctxPenguin.drawImage(imgSprite, 0, 47, 15, 5, this.x+2, this.y+45, 15, 5);
+	            }
+	            if(!(this.sacc*2 <= this.sac && this.sac < this.sacc*3) || this.speed == 0)
+	            {
+	                ctxPenguin.drawImage(imgSprite, 0, 47, 15, 5, this.x+26, this.y+45, 15, 5);
+	            }
+	            if(this.ta == 'left' && this.tac >= 0)
+	            {
+	                if(0 <= this.tac && this.tac < this.tacc)
+	                {
+	                    ctxPenguin.drawImage(imgSprite, 14, this.ay, 5, 6, this.x-3, this.y+35, 5, 6);
+	                }
+	                else if(this.tacc <= this.tac && this.tac < this.tacc*2)
+	                {
+	                    ctxPenguin.drawImage(imgSprite, 18, this.ay, 4, 6, this.x-2, this.y+35, 4, 6);
+	                }   
+	            }
+	            else
+	            {
+	                ctxPenguin.drawImage(imgSprite, 14, this.ay, 5, 6, this.x-3, this.y+35, 5, 6);
+	            }
+	            if(this.ta == 'right' && this.tac >= 0)
+	            {
+	                if(0 <= this.tac && this.tac < this.tacc)
+	                {
+	                ctxPenguin.drawImage(imgSprite, 24, this.ay, 5, 6, this.x+41, this.y+35, 5, 6);
+	                }
+	                else if(this.tacc <= this.tac && this.tac < this.tacc*2)
+	                {
+	                    ctxPenguin.drawImage(imgSprite, 21, this.ay, 4, 6, this.x+41, this.y+35, 4, 6);
+	                }
+	            }
+	            else
+	            {
+	                ctxPenguin.drawImage(imgSprite, 24, this.ay, 5, 6, this.x+41, this.y+35, 5, 6);
+	            }
+	        }
+	        else
+	        {
+	            if(this.direction == 'down')
+	            {
+	                ctxPenguin.drawImage(imgSprite, 84+this.icx, this.py, 43, 48, this.x, this.y, 43, 48);
+	                if(!(0 <= this.sac && this.sac < this.sacc) || this.speed == 0)
+	                {
+	                    ctxPenguin.drawImage(imgSprite, 0, 47, 15, 5, this.x+2, this.y+45, 15, 5);
+	                }
+	                if(!(this.sacc*2 <= this.sac && this.sac < this.sacc*3) || this.speed == 0)
+	                {
+	                    ctxPenguin.drawImage(imgSprite, 0, 47, 15, 5, this.x+26, this.y+45, 15, 5);
+	                }
+	            }
+	            if(this.direction == 'left')
+	            {
+	                ctxPenguin.drawImage(imgSprite, 42+this.icx, this.py, 43, 48, this.x, this.y, 43, 48);
+	                if(!(0 <= this.sac && this.sac < this.sacc) || this.speed == 0)
+	                {
+	                    ctxPenguin.drawImage(imgSprite, 0, 47, 15, 5, this.x+2, this.y+45, 15, 5);
+	                }
+	                if(!(this.sacc*2 <= this.sac && this.sac < this.sacc*3) || this.speed == 0)
+	                {
+	                    ctxPenguin.drawImage(imgSprite, 0, 47, 15, 5, this.x+25, this.y+45, 15, 5);
+	                }
+	            }
+	            if(this.direction == 'right')
+	            {
+	                ctxPenguin.drawImage(imgSprite, 0+this.icx, this.py, 43, 48, this.x, this.y, 43, 48);
+	                if(!(0 <= this.sac && this.sac < this.sacc) || this.speed == 0)
+	                {    
+	                    ctxPenguin.drawImage(imgSprite, 0, 47, 15, 5, this.x+3, this.y+45, 15, 5);
+	                }
+	                if(!(this.sacc*2 <= this.sac && this.sac < this.sacc*3) || this.speed == 0)
+	                {
+	                    ctxPenguin.drawImage(imgSprite, 0, 47, 15, 5, this.x+26, this.y+45, 15, 5);
+	                }
+	            }
+	            if(this.ta == 'left' && this.tac >= 0)
+	            {
+	                if(0 <= this.tac && this.tac < this.tacc)
+	                {
+	                    ctxPenguin.drawImage(imgSprite, 14, this.ay, 5, 6, this.x-3, this.y+35, 5, 6);
+	                }
+	                else if(this.tacc <= this.tac && this.tac < this.tacc*2)
+	                {
+	                    ctxPenguin.drawImage(imgSprite, 18, this.ay, 4, 6, this.x-2, this.y+35, 4, 6);
+	                }        
+	                else if(this.tacc*3 <= this.tac && this.tac < this.tacc*4)
+	                {
+	                    ctxPenguin.drawImage(imgSprite, 21, this.ay, 4, 6, this.x+1, this.y+35, 4, 6);
+	                } 
+	                else if(this.tacc*4 <= this.tac && this.tac < this.tacc*5)
+	                {
+	                    ctxPenguin.drawImage(imgSprite, 24, this.ay, 5, 6, this.x+1, this.y+35, 5, 6);
+	                }
+	            }
+	            else
+	            {
+	                ctxPenguin.drawImage(imgSprite, 14, this.ay, 5, 6, this.x-3, this.y+35, 5, 6); //leftarm
+	            }
+	            if(this.ta == 'right' && this.tac >= 0)
+	            {
+	                if(0 <= this.tac && this.tac < this.tacc)
+	                {
+	                    ctxPenguin.drawImage(imgSprite, 24, this.ay, 5, 6, this.x+41, this.y+35, 5, 6); //rightarm
+	                }
+	                else if(this.tacc <= this.tac && this.tac < this.tacc*2)
+	                {
+	                    ctxPenguin.drawImage(imgSprite, 21, this.ay, 4, 6, this.x+41, this.y+35, 4, 6); //rightarm  
+	                }
+	                else if(this.tacc*3 <= this.tac && this.tac < this.tacc*4)
+	                {
+	                    ctxPenguin.drawImage(imgSprite, 18, this.ay, 4, 6, this.x+38, this.y+35, 4, 6); //rightarm   
+	                }
+	                else if(this.tacc*4 <= this.tac && this.tac < this.tacc*5)  
+	                {
+	                    ctxPenguin.drawImage(imgSprite, 14, this.ay, 4, 6, this.x+37, this.y+35, 4, 6); //rightarm
+	                }       
+	            }
+	            else
+	            {
+	                ctxPenguin.drawImage(imgSprite, 24, this.ay, 5, 6, this.x+41, this.y+35, 5, 6); //rightarm
+	            }
+	        }
+	        for(var x = 0; x < this.snowballs.length; x++)
+	        {
+	            if(this.snowballs[x].live != 'false')
+	            {    
+	                this.snowballs[x].draw();
+	            }
+	        }
+	    }
+	}
+
+
+	function Snowball(x, y, d)
+	{
+	    this.x = x;
+	    this.y = y;
+	    this.direction = d;
+	    this.speed = 9;
+	    this.live = 'true';
+	    this.ac = 0;
+	    this.acc = 100;
+
+	    Snowball.prototype.draw = function()
+	    {
+	        if(this.live == 'true')
+	        {
+	            if(this.direction == "up")
+	            {
+	                this.y -= this.speed;
+	            }
+	            if(this.direction == "down")
+	            {
+	                this.y += this.speed;
+	            }
+	            if(this.direction == "left")
+	            {
+	                this.x -= this.speed;
+	            }
+	            if(this.direction == "right")
+	            {
+	                this.x += this.speed;
+	            }
+	            if(this.x < -6 || this.x > gameWidth-17 || this.y < -4 || this.y > gameHeight - 17)
+	            {
+	                this.live = 'dying';
+	            }
+	            ctxSnowball.drawImage(imgSprite, 42, 47, 16, 16, this.x, this.y, 16, 16);
+	        }
+	        if(this.live == 'dying')
+	        {
+	            this.ac += 20;
+	            if(this.ac < this.acc)
+	            {
+	                ctxSnowball.drawImage(imgSprite, 57, 47, 20, 21, this.x, this.y, 20, 21);
+	            }
+	            if(this.ac >= this.acc && this.ac < this.acc*2)
+	            {
+	                ctxSnowball.drawImage(imgSprite, 76, 47, 22, 20, this.x, this.y, 22, 20);
+	            }
+	            if(this.ac >= this.acc*2 && this.ac < this.acc*3)
+	            {
+	                ctxSnowball.drawImage(imgSprite, 97, 47, 24, 21, this.x, this.y, 24, 21);
+	            }
+	            if(this.ac >= this.acc*3 && this.ac < this.acc*4)
+	            {
+	                ctxSnowball.drawImage(imgSprite, 120, 47, 26, 20, this.x, this.y, 26, 20);
+	            }
+	            if(this.ac >= this.acc*4)
+	            {
+	                this.live = 'false';
+	            }
+	        }
+	    }
+	}
+
+
+	function Enemy(x, y, d, play)
+	{
+
+	    this.direction = d;
+	    this.x = x;
+	    this.y = y;
+	    this.py = (play-1)*67;
+	    this.speed = 0;
+	    this.sac = 0;
+	    this.sacc = 140;
+	    this.cc = 0;
+	    this.ccc = Math.random()*100+200;
+	    this.allow = 10;
+	    this.live = true;
+	    this.player = play;
+
+
+	    Enemy.prototype.calc = function()
+	    {
+	        if(this.speed != 0)
+	        {
+	            if(this.y - penguins[this.player-1].y > this.x - penguins[this.player-1].x)
+	            {
+	                if(this.y - penguins[this.player-1].y < -this.allow)
+	                {
+	                    this.direction = 'down';
+	                }
+	                else if(this.y - penguins[this.player-1].y > this.allow)
+	                {
+	                    this.direction = 'up';
+	                }
+	                else if(this.x - penguins[this.player-1].x < -this.allow)
+	                {
+	                    this.direction = 'right';
+	                }
+	                else
+	                {
+	                    this.direction = 'left';
+	                }
+	            }
+	            else
+	            {
+	                if(this.x - penguins[this.player-1].x < -this.allow)
+	                {
+	                    this.direction = 'right';
+	                }
+	                else if(this.x - penguins[this.player-1].x > this.allow)
+	                {
+	                    this.direction = 'left';
+	                }
+	                else if(this.y - penguins[this.player-1].y < -this.allow)
+	                {
+	                    this.direction = 'down';
+	                }
+	                else
+	                {
+	                    this.direction = 'up';
+	                } 
+	            }
+	        }
+	    }
+
+
+	    Enemy.prototype.draw = function()
+	    {
+	        this.sac += 20;
+	        this.cc += 20;
+	        if(this.sac > this.sacc*4)
+	        {
+	            this.sac = 0;
+	        }
+	        if(this.cc > this.ccc)
+	        {
+	            this.cc = 0;
+	            this.calc();
+	        }
+	        if(this.direction == 'up')
+	        {
+	            this.y -= this.speed;
+	        }
+	        if(this.direction == 'down')
+	        {
+	            this.y += this.speed;
+	        }
+	        if(this.direction == 'left')
+	        {
+	            this.x -= this.speed;
+	        }
+	        if(this.direction == 'right')
+	        {
+	            this.x += this.speed;
+	        }
+	        if(this.x < 2)
+	        {
+	            this.x = 2;
+	        }
+	        if(this.x > gameWidth-45)
+	        {
+	            this.x = gameWidth-45;
+	        }
+	        if(this.y < -1)
+	        {
+	            this.y = -1;
+	        }
+	        if(this.y > gameHeight - 76)
+	        {
+	            this.y = gameHeight-76;
+	        }
+	        if(this.direction == 'up')
+	        {
+	            ctxEnemy.drawImage(imgSprite, 294, this.py, 43, 48, this.x, this.y, 43, 48);
+	            if(!(0 <= this.sac && this.sac < this.sacc) || this.speed == 0)
+	            {
+	                ctxEnemy.drawImage(imgSprite, 0, 47, 15, 5, this.x+2, this.y+45, 15, 5);
+	            }
+	            if(!(this.sacc*2 <= this.sac && this.sac < this.sacc*3) || this.speed == 0)
+	            {        
+	                ctxEnemy.drawImage(imgSprite, 0, 47, 15, 5, this.x+26, this.y+45, 15, 5);
+	            }
+	        }
+	        if(this.direction == 'down')
+	        {
+	            ctxEnemy.drawImage(imgSprite, 252, this.py, 43, 48, this.x, this.y, 43, 48);
+	            if(!(0 <= this.sac && this.sac < this.sacc) || this.speed == 0)
+	            {
+	                ctxEnemy.drawImage(imgSprite, 0, 47, 15, 5, this.x+2, this.y+45, 15, 5);
+	            }
+	            if(!(this.sacc*2 <= this.sac && this.sac < this.sacc*3) || this.speed == 0)
+	            {
+	                ctxEnemy.drawImage(imgSprite, 0, 47, 15, 5, this.x+26, this.y+45, 15, 5);
+	            }
+	        }
+	        if(this.direction == 'left')
+	        {
+	            ctxEnemy.drawImage(imgSprite, 210, this.py, 43, 48, this.x, this.y, 43, 48);
+	            if(!(0 <= this.sac && this.sac < this.sacc) || this.speed == 0)
+	            {
+	                ctxEnemy.drawImage(imgSprite, 0, 47, 15, 5, this.x+2, this.y+45, 15, 5);
+	            }
+	            if(!(this.sacc*2 <= this.sac && this.sac < this.sacc*3) || this.speed == 0)
+	            {
+	                ctxEnemy.drawImage(imgSprite, 0, 47, 15, 5, this.x+25, this.y+45, 15, 5);
+	            }
+	        }
+	        if(this.direction == 'right')
+	        {
+	            ctxEnemy.drawImage(imgSprite, 168, this.py, 43, 48, this.x, this.y, 43, 48);
+	            if(!(0 <= this.sac && this.sac < this.sacc) || this.speed == 0)
+	            {
+	                ctxEnemy.drawImage(imgSprite, 0, 47, 15, 5, this.x+3, this.y+45, 15, 5);
+	            }
+	            if(!(this.sacc*2 <= this.sac && this.sac < this.sacc*3) || this.speed == 0)
+	            {
+	                ctxEnemy.drawImage(imgSprite, 0, 47, 15, 5, this.x+26, this.y+45, 15, 5);
+	            }
+	        }
+	        ctxEnemy.drawImage(imgSprite, 28, 47, 5, 6, this.x-3, this.y+35, 5, 6); //leftarm
+	        ctxEnemy.drawImage(imgSprite, 38, 47, 5, 6, this.x+41, this.y+35, 5, 6); //rightarm
+	    }
+	}
+	</script>
+</head>
+<body onload="init()">
+    <section>
+        <center>
+        <img id="title" src="title.png">
+        <canvas id="canvasPenguin" width="600" height="530"></canvas>
+        <canvas id="canvasEnemy" width="600" height="530"></canvas>
+        <canvas id="canvasSnowball" width="600" height="530"></canvas>
+        <h3 id="vectorLabel"></h3>
+        <input placeholder="RPS (Default 10)" id="writeMS"/>
+        <button id="recordButton" onclick="record()">Start Recording</button>
+        <h3>Output</h3>
+        <textarea id="outputBox" onclick="this.select()"></textarea>
+        </center>
+        <style type='text/css'>
+        h1{
+        	display:block;
+        }
+        img{
+            display:block;
+            user-drag: none; 
+            -moz-user-select: none;
+            -webkit-user-drag: none;
+        }
+        canvas
+        {
+            display:block;
+            border-style: solid;
+            border-width:1px;
+        }
+        #title{
+        }
+        #canvasPenguin
+        {
+            margin-top:4px;
+        }
+        #canvasSnowball, #canvasEnemy
+        {
+            margin-top:-532px;
+        }
+        #outputBox
+        {
+        	width:600px;
+        }
+    </style>
+    </section>
+</body>
+</html>
