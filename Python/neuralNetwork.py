@@ -7,9 +7,9 @@ def open_data(file):
     data = []
     for line in data_file:
         data_array = [int(x) for x in line.strip().split("|")]
-        # if data_array[1] != -1:
-        #     data.append(data_array)
-        data.append(data_array)
+        if data_array[1] != -1:
+            data.append(data_array)
+        #data.append(data_array)
     data = np.array(data).T
     return data[2:], data[1]
 
@@ -56,12 +56,12 @@ def main():
     # print(sess.run(hello))
     tf.set_random_seed(1)
 
-    X_train, Y_train = open_data("../Data/trainData1.txt")
+    X_train, Y_train = open_data("../Data/trainData1Parsed.txt")
 
     Y_train = np.add(Y_train, np.array([1]))
     Y_train = one_hot_Y(Y_train, 6)
 
-    X_test, Y_test = open_data("../Data/testData1.txt")
+    X_test, Y_test = open_data("../Data/testData1Parsed.txt")
 
     Y_test = np.add(Y_test, np.array([1]))
     Y_test = one_hot_Y(Y_test, 6)
@@ -86,11 +86,10 @@ def main():
         correct_prediction = tf.equal(tf.argmax(Z), tf.argmax(Y))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 
-        final_params = sess.run(parameters)
+        #final_params = sess.run(parameters)
 
         print ("Train Accuracy:", accuracy.eval({X: X_train, Y: Y_train}))
         print ("Test Accuracy:", accuracy.eval({X: X_test, Y: Y_test}))
-        print("Final parameters: {}".format(final_params))
-
+        #print("Final parameters: {}".format(final_params))
 
 main()
