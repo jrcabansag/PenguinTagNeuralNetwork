@@ -1,6 +1,7 @@
 import sys
 import tensorflow as tf
 import numpy as np
+import json
 
 def open_data(file):
     data_file = open(file, 'r')
@@ -58,12 +59,10 @@ def main():
 
     X_train, Y_train = open_data("../Data/trainData1Parsed.txt")
 
-    Y_train = np.add(Y_train, np.array([1]))
     Y_train = one_hot_Y(Y_train, 6)
 
-    X_test, Y_test = open_data("../Data/testData1Parsed.txt")
+    X_test, Y_test = open_data("../Data/testData2Parsed.txt")
 
-    Y_test = np.add(Y_test, np.array([1]))
     Y_test = one_hot_Y(Y_test, 6)
 
     n_x = X_train.shape[0]
@@ -76,9 +75,12 @@ def main():
     cost = compute_cost(Z, Y)
     optimizer = tf.train.AdamOptimizer(learning_rate = 0.0001).minimize(cost)
     init = tf.global_variables_initializer()
+    saver = tf.train.Saver()
 
     with tf.Session() as sess:
         sess.run(init)
+        #saver.restore(sess, "../Models/model1.ckpt")
+
         for run in range(10001):
             _, my_cost = sess.run([optimizer, cost], feed_dict={X: X_train, Y: Y_train})
             if run % 100 == 0:
@@ -86,10 +88,13 @@ def main():
         correct_prediction = tf.equal(tf.argmax(Z), tf.argmax(Y))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 
-        #final_params = sess.run(parameters)
+        final_params = sess.run(parameters)
 
         print ("Train Accuracy:", accuracy.eval({X: X_train, Y: Y_train}))
         print ("Test Accuracy:", accuracy.eval({X: X_test, Y: Y_test}))
-        #print("Final parameters: {}".format(final_params))
+        for key in final_params:
+            final_params[key] = final_params[key].tolist();
+        output_file = open("../Models/model1.json", 'w')
+        output_file.write(json.dumps(final_params));
 
 main()
