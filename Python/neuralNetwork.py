@@ -8,9 +8,7 @@ def open_data(file):
     data = []
     for line in data_file:
         data_array = [int(x) for x in line.strip().split("|")]
-        if data_array[1] != -1:
-            data.append(data_array)
-        #data.append(data_array)
+        data.append(data_array)
     data = np.array(data).T
     return data[2:], data[1]
 
@@ -44,6 +42,12 @@ def forward_propagation(X, parameters):
 
     return Z1
 
+def sigmoid(Z):
+    return tf.nn.sigmoid(Z);
+
+def relu(Z):
+    return tf.nn.relu(Z);
+
 def compute_cost(Z, Y):
     logits = tf.transpose(Z)
     labels = tf.transpose(Y)
@@ -57,11 +61,11 @@ def main():
     # print(sess.run(hello))
     tf.set_random_seed(1)
 
-    X_train, Y_train = open_data("../Data/trainData1Parsed.txt")
+    X_train, Y_train = open_data("../Data/trainData1ParsedAugmentedDirectionsOnly.txt")
 
     Y_train = one_hot_Y(Y_train, 6)
 
-    X_test, Y_test = open_data("../Data/testData2Parsed.txt")
+    X_test, Y_test = open_data("../Data/testData1ParsedDirectionsOnly.txt")
 
     Y_test = one_hot_Y(Y_test, 6)
 
@@ -72,14 +76,14 @@ def main():
     X, Y = create_placeholders(n_x, n_y)
     parameters = initialize_parameters(n_x, n_y)
     Z = forward_propagation(X, parameters)
-    cost = compute_cost(Z, Y)
-    optimizer = tf.train.AdamOptimizer(learning_rate = 0.0001).minimize(cost)
+    A = sigmoid(Z)
+    cost = compute_cost(A, Y)
+    optimizer = tf.train.AdamOptimizer(learning_rate = 0.00001).minimize(cost)
     init = tf.global_variables_initializer()
     saver = tf.train.Saver()
 
     with tf.Session() as sess:
         sess.run(init)
-        #saver.restore(sess, "../Models/model1.ckpt")
 
         for run in range(10001):
             _, my_cost = sess.run([optimizer, cost], feed_dict={X: X_train, Y: Y_train})

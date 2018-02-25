@@ -6,12 +6,12 @@
     <link rel="icon" type="image/png" href="icon.png" sizes="32x32" />
     <script src="../Scripts/require.js"></script>
 	<script type='text/javascript'>
-
-	//var dl = require(["https://cdn.jsdelivr.net/npm/deeplearn@latest"]);
 	var dl;
 	require(['https://cdn.jsdelivr.net/npm/deeplearn@latest'], function(myFile) {
 	  dl = myFile;
 	});
+	var math;
+	var session;
 	var graph;
 	var inputTensor;
 	var outputTensor;
@@ -72,25 +72,21 @@
 	    {
 	        penguins[0].direction = 'up';
 	        penguins[0].lastKey = 0;
-	        //e.preventDefault();
 	    }
 	    if (moveIndex == 2)
-	    { //right arrow or D key
+	    {
 	        penguins[0].direction = 'right';
 	        penguins[0].lastKey = 1;
-	        //e.preventDefault();
 	    }
 	    if (moveIndex == 3)
-	    { //down arrow or S key
+	    {
 	        penguins[0].direction = 'down';
 	        penguins[0].lastKey = 2;
-	        //e.preventDefault();
 	    }
 	    if (moveIndex == 4)
-	    { //left arrow or A key
+	    {
 	        penguins[0].direction = 'left';
 	        penguins[0].lastKey = 3;
-	        //e.preventDefault();
 	    }
 	    if (moveIndex == 5)
 	    { 
@@ -127,7 +123,6 @@
 	                }
 	            }
 	        }
-	        //e.preventDefault();
 	    }
 	}
 
@@ -137,17 +132,13 @@
 				aiMakeMove(Math.floor(Math.random()*6));
 			}
 			else{
-				const math = dl.ENV.math;
-				// const inputProvider = dl.Array1D([dl.Array2D([[1.0, 2.0, 3.0]])])
-				// const testFeedEntries = [{tensor: inputTensor, data: inputProvider}];
 				const mapping = [{
 			      tensor: inputTensor,
-			      //data: dl.tensor2d([[1.0], [2.0], [3.0], [1.0], [2.0], [3.0], [1.0], [2.0], [3.0], [1.0], [2.0], [3.0], [1.0], [2.0], [3.0], [1.0], [2.0], [3.0],[1.0], [2.0], [3.0], [1.0], [2.0], [3.0], [1.0], [2.0], [3.0],[1.0], [2.0], [3.0], [1.0], [2.0], [3.0], [1.0], [2.0], [3.0],[1.0], [2.0], [3.0], [1.0], [2.0], [3.0], [1.0], [2.0], [3.0],[1.0], [2.0], [3.0], [1.0], [2.0]]),
 			      data: dl.tensor2d(makeVector())
 			    }];
-				const session = new dl.Session(graph, math);
 				const testOutput = session.eval(outputTensor, mapping);
 				testOutput.data().then(function(result){
+					alert(result);
 					aiMakeMove(getMaxIndex(result));
 				});
 			}
@@ -182,29 +173,16 @@
 
 	            reader.onload = function(e) {
 	            	var model_dict = JSON.parse(reader.result);
-	            	// graph = new dl.Graph();
 	                const hidden1W = dl.tensor2d(model_dict["W1"]);
 	                const hidden1b = dl.tensor2d(model_dict["b1"]);
-	             //    alert(model_dict["W1"].length);
-
 					graph = new dl.Graph();
-
-					// Placeholders are input containers. This is the container for where we will
-					// feed an input NDArray when we execute the graph.
 					const inputShape = [50, 1];
 					inputTensor = graph.placeholder('input', inputShape);
-
-					// const labelShape = [6];
-					// const labelTensor = graph.placeholder('label', labelShape);
-
-					// Variables are containers that hold a value that can be updated from
-					// training.
-					// Here we initialize the multiplier variable randomly.
 					const multiplier = graph.variable('W1', hidden1W);
 					const bias = graph.variable('b1', hidden1b);
-
-					// Top level graph methods take Tensors and return Tensors.
-					outputTensor = graph.add(graph.matmul(multiplier, inputTensor), bias);
+					outputTensor = graph.sigmoid(graph.add(graph.matmul(multiplier, inputTensor), bias));
+					math = dl.ENV.math;
+					session = new dl.Session(graph, math);
 					modelLabel.innerHTML = "Using model: "+modelInput.value.split(/(\\|\/)/g).pop();
 	            }
 
@@ -213,16 +191,6 @@
 	           alert("File not supported!");
 	        }
     	}
-//     	let a = dl.tensor2d([[1.0, 2.0], [3.0, 4.0]]);
-// let b = dl.tensor2d([[0.0, 2.0], [4.0, 6.0]]);
-
-// // The library has a chainable API allowing you to call operations
-// // directly as methods on Tensors.
-// let average = a.sub(b).square().mean();
-
-//     	average.data().then(function(result) {
-//         	alert(result);
-//     	});
 	}
 
 	function write(){
@@ -253,13 +221,6 @@
 		return list;
 	}
 
-	// function makeVector(){
-	// 	var output = penguins[1].lastKey+"|"+penguins[0].lastKey+"|"+vectorizePenguin(penguins[1])+"|"+p1lives+"|"+vectorizePenguin(penguins[0])+"|"+p2lives+"|"+vectorizeEnemyPenguin(enemies[0])+"|"+vectorizeEnemyPenguin(enemies[1])+"|"+vectorizeEnemyPenguin(enemies[2])+"|"+vectorizeEnemyPenguin(enemies[3])+"|"+vectorizeSnowballs(penguins[1])+"|"+vectorizeSnowballs(penguins[0]);
-	// 	penguins[1].lastKey = -1;
-	// 	penguins[0].lastKey = -1;
-	// 	return output;
-	// }
-
 	function vectorizePenguin(list, penguin){
 		list.push([penguin.x]);
 		list.push([penguin.y]);
@@ -268,21 +229,13 @@
 		return list;
 	}
 
-	// function vectorizePenguin(penguin){
-	// 	return penguin.x+"|"+penguin.y+"|"+numerizeDirection(penguin.direction)+"|"+penguin.speed;
-	// }
 	function vectorizeEnemyPenguin(list, enemyPenguin){
 		list.push([enemyPenguin.x]);
 		list.push([enemyPenguin.y]);
 		list.push([numerizeDirection(enemyPenguin.direction)]);
 		list.push([enemyPenguin.player]);
-		//return enemyPenguin.x+"|"+enemyPenguin.y+"|"+numerizeDirection(enemyPenguin.direction)+"|"+enemyPenguin.player;
 		return list;
 	}
-
-	// function vectorizeEnemyPenguin(enemyPenguin){
-	// 	return enemyPenguin.x+"|"+enemyPenguin.y+"|"+numerizeDirection(enemyPenguin.direction)+"|"+enemyPenguin.player;
-	// }
 
 	function vectorizeSnowballs(list, penguin){
 		var output = "";
@@ -292,7 +245,6 @@
 				list.push([penguin.snowballs[x].x]);
 				list.push([penguin.snowballs[x].y]);
 				list.push([numerizeDirection(penguin.snowballs[x].direction)]);
-				// output += penguin.snowballs[x].x+"|"+penguin.snowballs[x].y+"|"+numerizeDirection(penguin.snowballs[x].direction);
 				snowballCount+=1;
 				if(snowballCount != 3){
 					output += "|";
@@ -311,27 +263,6 @@
 		return list;
 	}
 
-	// function vectorizeSnowballs(penguin){
-	// 	var output = "";
-	// 	var snowballCount = 0;
-	// 	for(var x = 0; x < penguin.snowballs.length; x++){
-	// 		if(penguin.snowballs[x].live == "true" && snowballCount < 4){
-	// 			output += penguin.snowballs[x].x+"|"+penguin.snowballs[x].y+"|"+numerizeDirection(penguin.snowballs[x].direction);
-	// 			snowballCount+=1;
-	// 			if(snowballCount != 3){
-	// 				output += "|";
-	// 			}
-	// 		}
-	// 	}
-	// 	for(var y = snowballCount; y < 4; y++){
-	// 		output += "-1|-1|-1"
-	// 		if(y != 3){
-	// 			output += "|";
-	// 		}
-	// 	}
-	// 	return output;
-	// }
-
 	function numerizeDirection(direction){
 		if(direction == "up"){
 			return 0;
@@ -346,6 +277,7 @@
 			return 3;
 		}
 	}
+
 	function startGame()
 	{
 	    enemies = [new Enemy(10,10,'right',1), new Enemy(10,gameHeight-88,'right',1),new Enemy(gameWidth-60,10,'left',2), new Enemy(gameWidth-60,gameHeight-88,'left',2)];
@@ -664,25 +596,25 @@
 	        e.preventDefault();
 	    }
 	    if (keyID == 68)
-	    { //right arrow or D key
+	    {
 	        penguins[1].direction = 'right';
 	        penguins[1].lastKey = 1;
 	        e.preventDefault();
 	    }
 	    if (keyID == 83)
-	    { //down arrow or S key
+	    {
 	        penguins[1].direction = 'down';
 	        penguins[1].lastKey = 2;
 	        e.preventDefault();
 	    }
 	    if (keyID == 65)
-	    { //left arrow or A key
+	    {
 	        penguins[1].direction = 'left';
 	        penguins[1].lastKey = 3;
 	        e.preventDefault();
 	    }
 	    if (keyID == 71)
-	    { //spacebar
+	    {
 	        if(game == true || (game == false && p1shot == false && penguins[1].direction == 'right' && loser == -1))
 	        {
 	        	penguins[1].lastKey = 4;
@@ -725,22 +657,22 @@
 	{
 	    var keyID = e.keyCode || e.which;
 	    if (keyID === 38 || keyID === 87)
-	    { //up arrow or W key
+	    {
 	        e.preventDefault();
 	    }
 	    if (keyID === 39 || keyID === 68)
-	    { //right arrow or D key
+	    {
 	        e.preventDefault();
 	    }
 	    if (keyID === 40 || keyID === 83)
-	    { //down arrow or S key
+	    {
 	        e.preventDefault();
 	    }
 	    if (keyID === 37 || keyID === 65)
-	    { //left arrow or A key
+	    {
 	        e.preventDefault();
 	    }
-	    if (keyID === 32) { //spacebar
+	    if (keyID === 32) {
 	        e.preventDefault();
 	    }
 	}
