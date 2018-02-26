@@ -7,13 +7,20 @@ def open_data(file, directionsOnly):
     for line in data_file:
         data_array = line.strip().split("|")
         data_array = [int(x) for x in data_array]
-        if directionsOnly:
-            if data_array[1] != 0:
-                data.append(data_array)
+        if len(data_array) != 52:
+        	print(data_array)
+        	print("WRONG!")
         else:
-            data.append(data_array)
+        	data.append(data_array)
     return np.array(data)
 
+def make_directions_only(data):
+	new_data = []
+	for row in data:
+		if row[1] != 0:
+			new_data.append(row)
+	return np.array(new_data)
+	
 def write_to_file(file, data):
 	write_file = open(file, 'w')
 	data = [[str(data[i, j]) for j in range(data.shape[1])] for i in range(data.shape[0])]
@@ -139,6 +146,8 @@ def main():
 	data = open_data(filename, directionsOnly)
 	data = add_1_to_inputs(data)
 	data = move_inputs_up(data)
+	if directionsOnly:
+		data = make_directions_only(data)
 	newfilename = filename[:len(filename)-4]+"Parsed"
 	if shouldAugment:
 		data_flip_h = flip_horizontal(data)

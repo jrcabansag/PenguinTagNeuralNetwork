@@ -49,121 +49,7 @@
 	var outputString = "";
 	var outputBox;
 
-	function init()
-	{
-		canvasPenguin = document.getElementById('canvasPenguin');
-		ctxPenguin = canvasPenguin.getContext('2d');
-		canvasSnowball = document.getElementById('canvasSnowball');
-		ctxSnowball = canvasSnowball.getContext('2d');
-		canvasEnemy = document.getElementById('canvasEnemy');
-		ctxEnemy = canvasEnemy.getContext('2d');
-		modelLabel = document.getElementById('modelLabel');
-		importButton = document.getElementById('importButton');
-		modelInput = document.getElementById('modelInput');
-		outputBox = document.getElementById('outputBox');
-	    startGame();
-	    loop();
-	    aiTurn();
-	    
-	}
-
-	function aiMakeMove(moveIndex){
-		if (moveIndex == 1)
-	    {
-	        penguins[0].direction = 'up';
-	        penguins[0].lastKey = 0;
-	    }
-	    if (moveIndex == 2)
-	    {
-	        penguins[0].direction = 'right';
-	        penguins[0].lastKey = 1;
-	    }
-	    if (moveIndex == 3)
-	    {
-	        penguins[0].direction = 'down';
-	        penguins[0].lastKey = 2;
-	    }
-	    if (moveIndex == 4)
-	    {
-	        penguins[0].direction = 'left';
-	        penguins[0].lastKey = 3;
-	    }
-	    if (moveIndex == 5)
-	    { 
-	        if(game == true || (game == false && p2shot == false && penguins[0].direction == 'left' && loser == -1))
-	        {
-	        	penguins[0].lastKey = 4;
-	            p2shot = true;
-	            if(penguins[0].tac < 0)
-	            {
-	                penguins[0].tac = 0;
-	                if(penguins[0].direction == 'left')
-	                {
-	                    penguins[0].snowballs[penguins[0].snowballs.length]=new Snowball(penguins[0].x+19-8,penguins[0].y+30,'left');
-	                }
-	                if(penguins[0].direction == 'right')
-	                {
-	                    penguins[0].snowballs[penguins[0].snowballs.length]=new Snowball(penguins[0].x+24-8,penguins[0].y+30,'right');
-	                }
-	                if(penguins[0].direction == 'up')
-	                {
-	                    penguins[0].snowballs[penguins[0].snowballs.length]=new Snowball(penguins[0].x+21-8,penguins[0].y-5,'up');
-	                }
-	                if(penguins[0].direction == 'down')
-	                {
-	                    penguins[0].snowballs[penguins[0].snowballs.length]=new Snowball(penguins[0].x+21-8,penguins[0].y+40,'down');
-	                }
-	                if(penguins[0].ta == 'right')
-	                {
-	                    penguins[0].ta = 'left';
-	                }
-	                else
-	                {
-	                    penguins[0].ta = 'right';
-	                }
-	            }
-	        }
-	    }
-	}
-
-	function aiTurn(){
-		if(game || (!game && loser == 1)){
-			if(graph == null){
-				aiMakeMove(Math.floor(Math.random()*6));
-			}
-			else{
-				const mapping = [{
-			      tensor: inputTensor,
-			      data: dl.tensor2d(makeVector())
-			    }];
-				const testOutput = session.eval(outputTensor, mapping);
-				testOutput.data().then(function(result){
-					alert(result);
-					aiMakeMove(getMaxIndex(result));
-				});
-			}
-		}
-		window.setTimeout('aiTurn()', writeMS);
-	}
-
-	function makeStateVector(){
-
-	}
-
-	function getMaxIndex(array){
-		var max = array[0];
-		var maxIndex = 0;
-		for(var x = 0; x < array.length; x++){
-			var value = array[x];
-			if(value > max){
-				maxIndex = x;
-				max = value;
-			}
-		}
-		return maxIndex;
-	}
-
-	function importModel()
+	function importModel() //used starter code and API from deeplearnjs.org 
 	{
 		var file = modelInput.files[0];
         var textType = /.*json/;
@@ -173,14 +59,39 @@
 
 	            reader.onload = function(e) {
 	            	var model_dict = JSON.parse(reader.result);
-	                const hidden1W = dl.tensor2d(model_dict["W1"]);
-	                const hidden1b = dl.tensor2d(model_dict["b1"]);
+	                const W1 = dl.tensor(model_dict["W1"]);
+	                const b1 = dl.tensor(model_dict["b1"]);
+	                const W2 = dl.tensor2d(model_dict["W2"]);
+	                const b2 = dl.tensor2d(model_dict["b2"]);
+	                const W3 = dl.tensor2d(model_dict["W3"]);
+	                const b3 = dl.tensor2d(model_dict["b3"]);
+	                const W4 = dl.tensor2d(model_dict["W4"]);
+	                const b4 = dl.tensor2d(model_dict["b4"]);
 					graph = new dl.Graph();
 					const inputShape = [50, 1];
 					inputTensor = graph.placeholder('input', inputShape);
-					const multiplier = graph.variable('W1', hidden1W);
-					const bias = graph.variable('b1', hidden1b);
-					outputTensor = graph.sigmoid(graph.add(graph.matmul(multiplier, inputTensor), bias));
+					const gW1 = graph.variable('W1', W1);
+					const gb1 = graph.variable('b1', b1);
+					const gW2 = graph.variable('W2', W2);
+					const gb2 = graph.variable('b2', b2);
+					const gW3 = graph.variable('W3', W3);
+					const gb3 = graph.variable('b3', b3);
+					const gW4 = graph.variable('W4', W4);
+					const gb4 = graph.variable('b4', b4);
+
+					const gZ1 = graph.add(graph.matmul(gW1, inputTensor), gb1);
+					const gA1 = graph.relu(gZ1);
+					const gZ2 = graph.add(graph.matmul(gW2, gA1), gb2);
+					const gA2 = graph.relu(gZ2);
+					const gZ3 = graph.add(graph.matmul(gW3, gA2), gb3);
+					const gA3 = graph.relu(gZ3);
+					const gZ4 = graph.add(graph.matmul(gW4, gA3), gb4);
+					const gA4 = gZ4;
+
+
+
+					
+					outputTensor = gA4;
 					math = dl.ENV.math;
 					session = new dl.Session(graph, math);
 					modelLabel.innerHTML = "Using model: "+modelInput.value.split(/(\\|\/)/g).pop();
@@ -191,19 +102,6 @@
 	           alert("File not supported!");
 	        }
     	}
-	}
-
-	function write(){
-		if(game && recording){
-			outputCount += 1;
-			outputString += makeVector()+"\n";
-		}
-		else if(!recording){
-		}
-		if(recording){
-			vectorLabel.innerHTML = "Recorded "+outputCount+" states";
-		}
-		window.setTimeout('write()', writeMS);
 	}
 
 	function makeVector(){
@@ -276,6 +174,152 @@
 		if(direction == "left"){
 			return 3;
 		}
+	}
+
+	function aiTurn(){
+		if(game || (!game && loser == 1)){
+			if(graph == null){
+				aiMakeMove(Math.floor(Math.random()*6));
+			}
+			else{
+				const mapping = [{
+			      tensor: inputTensor,
+			      data: dl.tensor2d(makeVector())
+			    }];
+				const testOutput = session.eval(outputTensor, mapping);
+				testOutput.data().then(function(result){
+					//alert(softmax(result));
+					aiMakeMove(chooseSoftmaxMove(softmax(result)));
+				});
+			}
+		}
+		window.setTimeout('aiTurn()', writeMS);
+	}
+
+	function aiMakeMove(moveIndex){
+		if (moveIndex == 1)
+	    {
+	        penguins[0].direction = 'up';
+	        penguins[0].lastKey = 0;
+	    }
+	    if (moveIndex == 2)
+	    {
+	        penguins[0].direction = 'right';
+	        penguins[0].lastKey = 1;
+	    }
+	    if (moveIndex == 3)
+	    {
+	        penguins[0].direction = 'down';
+	        penguins[0].lastKey = 2;
+	    }
+	    if (moveIndex == 4)
+	    {
+	        penguins[0].direction = 'left';
+	        penguins[0].lastKey = 3;
+	    }
+	    if (moveIndex == 5)
+	    { 
+	        if(game == true || (game == false && p2shot == false && penguins[0].direction == 'left' && loser == -1))
+	        {
+	        	penguins[0].lastKey = 4;
+	            p2shot = true;
+	            if(penguins[0].tac < 0)
+	            {
+	                penguins[0].tac = 0;
+	                if(penguins[0].direction == 'left')
+	                {
+	                    penguins[0].snowballs[penguins[0].snowballs.length]=new Snowball(penguins[0].x+19-8,penguins[0].y+30,'left');
+	                }
+	                if(penguins[0].direction == 'right')
+	                {
+	                    penguins[0].snowballs[penguins[0].snowballs.length]=new Snowball(penguins[0].x+24-8,penguins[0].y+30,'right');
+	                }
+	                if(penguins[0].direction == 'up')
+	                {
+	                    penguins[0].snowballs[penguins[0].snowballs.length]=new Snowball(penguins[0].x+21-8,penguins[0].y-5,'up');
+	                }
+	                if(penguins[0].direction == 'down')
+	                {
+	                    penguins[0].snowballs[penguins[0].snowballs.length]=new Snowball(penguins[0].x+21-8,penguins[0].y+40,'down');
+	                }
+	                if(penguins[0].ta == 'right')
+	                {
+	                    penguins[0].ta = 'left';
+	                }
+	                else
+	                {
+	                    penguins[0].ta = 'right';
+	                }
+	            }
+	        }
+	    }
+	}
+
+	function getMaxIndex(array){
+		var max = array[0];
+		var maxIndex = 0;
+		for(var x = 0; x < array.length; x++){
+			var value = array[x];
+			if(value > max){
+				maxIndex = x;
+				max = value;
+			}
+		}
+		return maxIndex;
+	}
+
+	function softmax(array){ //deeplearn.js' softmax was not working well so I had to code my own :(
+		var sum = 0;
+		for(var x = 0; x < array.length; x++){
+			array[x] = Math.exp(array[x]);
+			sum += array[x];
+		}
+		for(var x = 0; x < array.length; x++){
+			array[x] = array[x]/sum;
+		}
+		return array;
+	}
+
+	function chooseSoftmaxMove(array){ //make move using softmax as probabilities
+		var randValue = Math.random();
+		var sum = 0;
+		for(var x = 0; x < array.length; x++){
+			sum += array[x]
+			if(randValue <= sum){
+				return x;
+			}
+		}
+	}
+
+	function init()
+	{
+		canvasPenguin = document.getElementById('canvasPenguin');
+		ctxPenguin = canvasPenguin.getContext('2d');
+		canvasSnowball = document.getElementById('canvasSnowball');
+		ctxSnowball = canvasSnowball.getContext('2d');
+		canvasEnemy = document.getElementById('canvasEnemy');
+		ctxEnemy = canvasEnemy.getContext('2d');
+		modelLabel = document.getElementById('modelLabel');
+		importButton = document.getElementById('importButton');
+		modelInput = document.getElementById('modelInput');
+		outputBox = document.getElementById('outputBox');
+	    startGame();
+	    loop();
+	    aiTurn();
+	    
+	}
+
+	function write(){
+		if(game && recording){
+			outputCount += 1;
+			outputString += makeVector()+"\n";
+		}
+		else if(!recording){
+		}
+		if(recording){
+			vectorLabel.innerHTML = "Recorded "+outputCount+" states";
+		}
+		window.setTimeout('write()', writeMS);
 	}
 
 	function startGame()

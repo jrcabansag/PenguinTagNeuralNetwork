@@ -116,14 +116,15 @@
 			if(penguin.snowballs[x].live == "true" && snowballCount < 4){
 				output += penguin.snowballs[x].x+"|"+penguin.snowballs[x].y+"|"+numerizeDirection(penguin.snowballs[x].direction);
 				snowballCount+=1;
-				if(snowballCount != 3){
+				if(snowballCount != 4){
 					output += "|";
 				}
 			}
 		}
 		for(var y = snowballCount; y < 4; y++){
 			output += "-1|-1|-1"
-			if(y != 3){
+			snowballCount += 1;
+			if(snowballCount != 4){
 				output += "|";
 			}
 		}
