@@ -48,6 +48,39 @@
 	imgSprite.src = 'images.png';
 	var outputString = "";
 	var outputBox;
+	var moveLabelArray = []
+	var sampleCount = 6;
+	var bluePlayerIsPlayer = true;
+
+	function changeSampleCount(){
+		if(document.getElementById("sample1").checked == true){
+			sampleCount = 1;
+		}
+		if(document.getElementById("sample2").checked == true){
+			sampleCount = 2;
+		}
+		if(document.getElementById("sample3").checked == true){
+			sampleCount = 3;
+		}
+		if(document.getElementById("sample4").checked == true){
+			sampleCount = 4;
+		}
+		if(document.getElementById("sample5").checked == true){
+			sampleCount = 5;
+		}
+		if(document.getElementById("sample6").checked == true){
+			sampleCount = 6;
+		}
+	}
+
+	function changeBluePlayer(){
+		if(document.getElementById("bluePlayerPlayer").checked == true){
+			bluePlayerIsPlayer = true;
+		}
+		if(document.getElementById("bluePlayerRandom").checked == true){
+			bluePlayerIsPlayer = false;
+		}
+	}
 
 	function importModel() //used starter code and API from deeplearnjs.org 
 	{
@@ -59,39 +92,166 @@
 
 	            reader.onload = function(e) {
 	            	var model_dict = JSON.parse(reader.result);
-	                const W1 = dl.tensor(model_dict["W1"]);
-	                const b1 = dl.tensor(model_dict["b1"]);
-	                const W2 = dl.tensor2d(model_dict["W2"]);
-	                const b2 = dl.tensor2d(model_dict["b2"]);
-	                const W3 = dl.tensor2d(model_dict["W3"]);
-	                const b3 = dl.tensor2d(model_dict["b3"]);
-	                const W4 = dl.tensor2d(model_dict["W4"]);
-	                const b4 = dl.tensor2d(model_dict["b4"]);
-					graph = new dl.Graph();
-					const inputShape = [50, 1];
-					inputTensor = graph.placeholder('input', inputShape);
-					const gW1 = graph.variable('W1', W1);
-					const gb1 = graph.variable('b1', b1);
-					const gW2 = graph.variable('W2', W2);
-					const gb2 = graph.variable('b2', b2);
-					const gW3 = graph.variable('W3', W3);
-					const gb3 = graph.variable('b3', b3);
-					const gW4 = graph.variable('W4', W4);
-					const gb4 = graph.variable('b4', b4);
+	            	if("Z7_var" in model_dict){
+	            		alert("DETECTED DEEP NETWORK WITH BATCH NORM!");
+	            		graph = new dl.Graph();
+						const inputShape = [50, 1];
+						inputTensor = graph.placeholder('input', inputShape);
+	            		const W1 = dl.tensor(model_dict["W1"]);
+	            		const W2 = dl.tensor(model_dict["W2"]);
+	            		const W3 = dl.tensor(model_dict["W3"]);
+	            		const W4 = dl.tensor(model_dict["W4"]);
+	            		const W5 = dl.tensor(model_dict["W5"]);
+	            		const W6 = dl.tensor(model_dict["W6"]);
+	            		const W7 = dl.tensor(model_dict["W7"]);
+	            		const W8 = dl.tensor(model_dict["W8"]);
+	            		const gW1 = graph.variable('W1', W1);
+	            		const gW2 = graph.variable('W2', W2);
+	            		const gW3 = graph.variable('W3', W3);
+	            		const gW4 = graph.variable('W4', W4);
+	            		const gW5 = graph.variable('W5', W5);
+	            		const gW6 = graph.variable('W6', W6);
+	            		const gW7 = graph.variable('W7', W7);
+	            		const gW8 = graph.variable('W8', W8);
 
-					const gZ1 = graph.add(graph.matmul(gW1, inputTensor), gb1);
-					const gA1 = graph.relu(gZ1);
-					const gZ2 = graph.add(graph.matmul(gW2, gA1), gb2);
-					const gA2 = graph.relu(gZ2);
-					const gZ3 = graph.add(graph.matmul(gW3, gA2), gb3);
-					const gA3 = graph.relu(gZ3);
-					const gZ4 = graph.add(graph.matmul(gW4, gA3), gb4);
-					const gA4 = gZ4;
+	            		const Z1_mean = dl.tensor(model_dict["Z1_mean"]);
+	            		const Z1_var = dl.tensor(model_dict["Z1_var"]);
+	            		const Z2_mean = dl.tensor(model_dict["Z2_mean"]);
+	            		const Z2_var = dl.tensor(model_dict["Z2_var"]);
+	            		const Z3_mean = dl.tensor(model_dict["Z3_mean"]);
+	            		const Z3_var = dl.tensor(model_dict["Z3_var"]);
+	            		const Z4_mean = dl.tensor(model_dict["Z4_mean"]);
+	            		const Z4_var = dl.tensor(model_dict["Z4_var"]);
+	            		const Z5_mean = dl.tensor(model_dict["Z5_mean"]);
+	            		const Z5_var = dl.tensor(model_dict["Z5_var"]);
+	            		const Z6_mean = dl.tensor(model_dict["Z6_mean"]);
+	            		const Z6_var = dl.tensor(model_dict["Z6_var"]);
+	            		const Z7_mean = dl.tensor(model_dict["Z7_mean"]);
+	            		const Z7_var = dl.tensor(model_dict["Z7_var"]);
 
+	            		const gZ1_mean = graph.variable('Z1_mean', Z1_mean);
+	            		const gZ1_var = graph.variable('Z1_var', Z1_var);
+	            		const gZ2_mean = graph.variable('Z2_mean', Z2_mean);
+	            		const gZ2_var = graph.variable('Z2_var', Z2_var);
+	            		const gZ3_mean = graph.variable('Z3_mean', Z3_mean);
+	            		const gZ3_var = graph.variable('Z3_var', Z3_var);
+	            		const gZ4_mean = graph.variable('Z4_mean', Z4_mean);
+	            		const gZ4_var = graph.variable('Z4_var', Z4_var);
+	            		const gZ5_mean = graph.variable('Z5_mean', Z5_mean);
+	            		const gZ5_var = graph.variable('Z5_var', Z5_var);
+	            		const gZ6_mean = graph.variable('Z6_mean', Z6_mean);
+	            		const gZ6_var = graph.variable('Z6_var', Z6_var);
+	            		const gZ7_mean = graph.variable('Z7_mean', Z7_mean);
+	            		const gZ7_var = graph.variable('Z7_var', Z7_var);
 
+	            		const gZ1 = graph.divide(graph.subtract(graph.matmul(gW1, inputTensor),gZ1_mean), gZ1_var);
+						const gA1 = graph.relu(gZ1);
+						const gZ2 = graph.divide(graph.subtract(graph.matmul(gW2, gA1),gZ2_mean), gZ2_var);
+						const gA2 = graph.relu(gZ2);
+						const gZ3 = graph.divide(graph.subtract(graph.matmul(gW3, gA2),gZ3_mean), gZ3_var);
+						const gA3 = graph.relu(gZ3);
+						const gZ4 = graph.divide(graph.subtract(graph.matmul(gW4, gA3),gZ4_mean), gZ4_var);
+						const gA4 = graph.relu(gZ4);
+						const gZ5 = graph.divide(graph.subtract(graph.matmul(gW5, gA4),gZ5_mean), gZ5_var);
+						const gA5 = graph.relu(gZ5);
+						const gZ6 = graph.divide(graph.subtract(graph.matmul(gW6, gA5),gZ6_mean), gZ6_var);
+						const gA6 = graph.relu(gZ6);
+						const gZ7 = graph.divide(graph.subtract(graph.matmul(gW7, gA6),gZ7_mean), gZ7_var);
+						const gA7 = graph.relu(gZ7);
+						const gZ8 = graph.matmul(gW8, gA7)
+						// const gZ1 = graph.divide(graph.subtract(graph.matmul(gW1, inputTensor),gZ1_mean), gZ1_var);
+						// const gZ8 = graph.matmul(gW8, gZ1);
+						outputTensor = gZ8;
 
-					
-					outputTensor = gA4;
+	            	}
+	            	else if("b8" in model_dict){
+	            		alert("DETECTED DEEP NETWORK WITHOUT BATCH NORM!");
+		                const W1 = dl.tensor(model_dict["W1"]);
+		                const b1 = dl.tensor(model_dict["b1"]);
+		                const W2 = dl.tensor2d(model_dict["W2"]);
+		                const b2 = dl.tensor2d(model_dict["b2"]);
+		                const W3 = dl.tensor2d(model_dict["W3"]);
+		                const b3 = dl.tensor2d(model_dict["b3"]);
+		                const W4 = dl.tensor2d(model_dict["W4"]);
+		                const b4 = dl.tensor2d(model_dict["b4"]);
+		                const W5 = dl.tensor(model_dict["W5"]);
+		                const b5 = dl.tensor(model_dict["b5"]);
+		                const W6 = dl.tensor2d(model_dict["W6"]);
+		                const b6 = dl.tensor2d(model_dict["b6"]);
+		                const W7 = dl.tensor2d(model_dict["W7"]);
+		                const b7 = dl.tensor2d(model_dict["b7"]);
+		                const W8 = dl.tensor2d(model_dict["W8"]);
+		                const b8 = dl.tensor2d(model_dict["b8"]);
+						graph = new dl.Graph();
+						const inputShape = [50, 1];
+						inputTensor = graph.placeholder('input', inputShape);
+						const gW1 = graph.variable('W1', W1);
+						const gb1 = graph.variable('b1', b1);
+						const gW2 = graph.variable('W2', W2);
+						const gb2 = graph.variable('b2', b2);
+						const gW3 = graph.variable('W3', W3);
+						const gb3 = graph.variable('b3', b3);
+						const gW4 = graph.variable('W4', W4);
+						const gb4 = graph.variable('b4', b4);
+						const gW5 = graph.variable('W5', W5);
+						const gb5 = graph.variable('b5', b5);
+						const gW6 = graph.variable('W6', W6);
+						const gb6 = graph.variable('b6', b6);
+						const gW7 = graph.variable('W7', W7);
+						const gb7 = graph.variable('b7', b7);
+						const gW8 = graph.variable('W8', W8);
+						const gb8 = graph.variable('b8', b8);
+
+						const gZ1 = graph.add(graph.matmul(gW1, inputTensor), gb1);
+						const gA1 = graph.relu(gZ1);
+						const gZ2 = graph.add(graph.matmul(gW2, gA1), gb2);
+						const gA2 = graph.relu(gZ2);
+						const gZ3 = graph.add(graph.matmul(gW3, gA2), gb3);
+						const gA3 = graph.relu(gZ3);
+						const gZ4 = graph.add(graph.matmul(gW4, gA3), gb4);
+						const gA4 = graph.relu(gZ4);	
+						const gZ5 = graph.add(graph.matmul(gW5, gA4), gb5);
+						const gA5 = graph.relu(gZ5);
+						const gZ6 = graph.add(graph.matmul(gW6, gA5), gb6);
+						const gA6 = graph.relu(gZ6);
+						const gZ7 = graph.add(graph.matmul(gW7, gA6), gb7);
+						const gA7 = graph.relu(gZ7);
+						const gZ8 = graph.add(graph.matmul(gW8, gA7), gb8);
+						const gA8 = gZ8;	
+						outputTensor = gA8;
+	            	}
+	            	else{
+	            		alert("DETECTED SHALLOW NETWORK!");
+		                const W1 = dl.tensor(model_dict["W1"]);
+		                const b1 = dl.tensor(model_dict["b1"]);
+		                const W2 = dl.tensor2d(model_dict["W2"]);
+		                const b2 = dl.tensor2d(model_dict["b2"]);
+		                const W3 = dl.tensor2d(model_dict["W3"]);
+		                const b3 = dl.tensor2d(model_dict["b3"]);
+		                const W4 = dl.tensor2d(model_dict["W4"]);
+		                const b4 = dl.tensor2d(model_dict["b4"]);
+						graph = new dl.Graph();
+						const inputShape = [50, 1];
+						inputTensor = graph.placeholder('input', inputShape);
+						const gW1 = graph.variable('W1', W1);
+						const gb1 = graph.variable('b1', b1);
+						const gW2 = graph.variable('W2', W2);
+						const gb2 = graph.variable('b2', b2);
+						const gW3 = graph.variable('W3', W3);
+						const gb3 = graph.variable('b3', b3);
+						const gW4 = graph.variable('W4', W4);
+						const gb4 = graph.variable('b4', b4);
+
+						const gZ1 = graph.add(graph.matmul(gW1, inputTensor), gb1);
+						const gA1 = graph.relu(gZ1);
+						const gZ2 = graph.add(graph.matmul(gW2, gA1), gb2);
+						const gA2 = graph.relu(gZ2);
+						const gZ3 = graph.add(graph.matmul(gW3, gA2), gb3);
+						const gA3 = graph.relu(gZ3);
+						const gZ4 = graph.add(graph.matmul(gW4, gA3), gb4);
+						const gA4 = gZ4;	
+						outputTensor = gA4;
+					}
 					math = dl.ENV.math;
 					session = new dl.Session(graph, math);
 					modelLabel.innerHTML = "Using model: "+modelInput.value.split(/(\\|\/)/g).pop();
@@ -188,12 +348,82 @@
 			    }];
 				const testOutput = session.eval(outputTensor, mapping);
 				testOutput.data().then(function(result){
-					//alert(softmax(result));
-					aiMakeMove(chooseSoftmaxMove(softmax(result)));
+					// if(sampleCount == 1){
+					// 	aiMakeMove(getMaxIndex(result));
+					// }
+					// else{
+						aiMakeMove(chooseSoftmaxMove(softmax(result), sampleCount));
+					//}
 				});
 			}
 		}
 		window.setTimeout('aiTurn()', writeMS);
+	}
+
+	function bluePlayerTurn(){
+		if(bluePlayerIsPlayer == false && game == true){
+			bluePlayerMakeMove(Math.floor(Math.random()*6));
+		}
+		window.setTimeout('bluePlayerTurn()', writeMS);
+	}
+	function bluePlayerMakeMove(moveIndex){
+		if (moveIndex == 1)
+	    {
+	        penguins[1].direction = 'up';
+	        penguins[1].lastKey = 0;
+	    }
+	    if (moveIndex == 2)
+	    {
+	        penguins[1].direction = 'right';
+	        penguins[1].lastKey = 1;
+	    }
+	    if (moveIndex == 3)
+	    {
+	        penguins[1].direction = 'down';
+	        penguins[1].lastKey = 2;
+	    }
+	    if (moveIndex == 4)
+	    {
+	        penguins[1].direction = 'left';
+	        penguins[1].lastKey = 3;
+	    }
+	    if (moveIndex == 5)
+	    { 
+	        if(game == true || (game == false && p2shot == false && penguins[1].direction == 'left' && loser == -1))
+	        {
+	        	penguins[1].lastKey = 4;
+	            p2shot = true;
+	            if(penguins[1].tac < 0)
+	            {
+	                penguins[1].tac = 0;
+	                if(penguins[1].direction == 'left')
+	                {
+	                    penguins[1].snowballs[penguins[1].snowballs.length]=new Snowball(penguins[1].x+19-8,penguins[1].y+30,'left');
+	                }
+	                if(penguins[1].direction == 'right')
+	                {
+	                    penguins[1].snowballs[penguins[1].snowballs.length]=new Snowball(penguins[1].x+24-8,penguins[1].y+30,'right');
+	                }
+	                if(penguins[1].direction == 'up')
+	                {
+	                    penguins[1].snowballs[penguins[1].snowballs.length]=new Snowball(penguins[1].x+21-8,penguins[1].y-5,'up');
+	                }
+	                if(penguins[1].direction == 'down')
+	                {
+	                    penguins[1].snowballs[penguins[1].snowballs.length]=new Snowball(penguins[1].x+21-8,penguins[1].y+40,'down');
+	                }
+	                if(penguins[1].ta == 'right')
+	                {
+	                    penguins[1].ta = 'left';
+	                }
+	                else
+	                {
+	                    penguins[1].ta = 'right';
+	                }
+	            }
+	        }
+	    }
+
 	}
 
 	function aiMakeMove(moveIndex){
@@ -280,15 +510,71 @@
 		return array;
 	}
 
-	function chooseSoftmaxMove(array){ //make move using softmax as probabilities
-		var randValue = Math.random();
-		var sum = 0;
-		for(var x = 0; x < array.length; x++){
-			sum += array[x]
-			if(randValue <= sum){
-				return x;
+	function chooseSoftmaxMove(array, sampleCount){ //make move using softmax as probabilities
+		// if(sampleCount == 6){
+		// 	var randValue = Math.random();
+		// 	var sum = 0;
+		// 	for(var x = 0; x < array.length; x++){
+		// 		sum += array[x]
+		// 		if(randValue <= sum){
+		// 			return x;
+		// 		}
+		// 	}
+		// }
+		// else{
+			var maxIndeces = [];
+			while(maxIndeces.length < sampleCount){
+				var maxIndex = -1;
+				var maxValue = -1;
+				for(var x = 0; x < array.length; x++){
+					if(maxIndeces.indexOf(x) == -1 && (maxIndex == -1 || array[x] > maxValue)){
+						maxIndex = x;
+						maxValue = array[x];
+					}
+				}
+				maxIndeces.push(maxIndex);
 			}
-		}
+			var sum = 0;
+			for(var x = 0; x < maxIndeces.length; x++){
+				sum += array[maxIndeces[x]];
+			}
+			var randomSum = 0;
+			var randomValue = Math.random();
+			for(var x = 0; x < array.length; x++){
+				var moveString = "";
+				if(x < maxIndeces.length){
+					if(maxIndeces[x] == 0){
+						moveString = "Nothing";
+					}
+					if(maxIndeces[x] == 1){
+						moveString = "Up";
+					}
+					if(maxIndeces[x] == 2){
+						moveString = "Right";
+					}
+					if(maxIndeces[x] == 3){
+						moveString = "Down";
+					}
+					if(maxIndeces[x] == 4){
+						moveString = "Left";
+					}
+					if(maxIndeces[x] == 5){
+						moveString = "Snowball";
+					}
+					moveLabelArray[x].innerHTML = moveString+": "+array[maxIndeces[x]];
+				}
+				else{
+					moveLabelArray[x].innerHTML = "";
+				}
+			}
+			for(var x = 0; x < maxIndeces.length; x++){
+				randomSum += array[maxIndeces[x]]/sum;
+				if(randomValue <= randomSum){
+					return maxIndeces[x];
+				}
+
+			}
+		//}
 	}
 
 	function init()
@@ -303,8 +589,10 @@
 		importButton = document.getElementById('importButton');
 		modelInput = document.getElementById('modelInput');
 		outputBox = document.getElementById('outputBox');
+		moveLabelArray = [document.getElementById('move0'), document.getElementById('move1'), document.getElementById('move2'), document.getElementById('move3'), document.getElementById('move4'), document.getElementById('move5')];
 	    startGame();
 	    loop();
+	    bluePlayerTurn();
 	    aiTurn();
 	    
 	}
@@ -1182,9 +1470,32 @@
         <canvas id="canvasPenguin" width="600" height="530"></canvas>
         <canvas id="canvasEnemy" width="600" height="530"></canvas>
         <canvas id="canvasSnowball" width="600" height="530"></canvas>
-        <h3 id="modelLabel">No model! Currently using random decisions for AI</h3>
+        <div id="sideText">
+        <h1 id="topText">Blue Penguin</h1>
+	    <form id="bluePlayer" onchange="changeBluePlayer()">
+		  <input id="bluePlayerPlayer" type="radio" name="bluePlayer" value="player" checked="checked"> <b>Player</b>
+		  <input id="bluePlayerRandom" type="radio" name="bluePlayer" value="random"> <b>Random</b>
+		</form>
+        <h1>Pink Penguin</h1>
+        <h3 id="modelLabel">No model! Using random decisions for AI</h3>
         <input type="file" placeholder="Model" id="modelInput"/>
         <button id="importButton" onclick="importModel()">Import Model</button>
+        <br><h4>Sampling from top:</h4>
+        <form id="sampleCount" onchange="changeSampleCount()">
+		  <input id="sample1" type="radio" name="sampleCount" value="1"> <b>1</b>
+		  <input id="sample2" type="radio" name="sampleCount" value="2"> <b>2</b>
+		  <input id="sample3" type="radio" name="sampleCount" value="3"> <b>3</b>
+		  <input id="sample4" type="radio" name="sampleCount" value="4"> <b>4</b>
+		  <input id="sample5" type="radio" name="sampleCount" value="5"> <b>5</b>
+		  <input id="sample6" type="radio" name="sampleCount" value="6" checked="checked"> <b>6</b>
+		</form>
+        <h4 id="move0"></h4>
+        <h4 id="move1"></h4>
+        <h4 id="move2"></h4>
+        <h4 id="move3"></h4>
+        <h4 id="move4"></h4>
+        <h4 id="move5"></h4>
+    	</div>
         </center>
         <style type='text/css'>
         h1{
@@ -1201,8 +1512,16 @@
             display:block;
             border-style: solid;
             border-width:1px;
+            margin-left:-300px;
+        }
+        #sideText{
+        	width: 350px;
+        	margin-top: -500px;
+        	margin-left: 700px;
+
         }
         #title{
+        	margin-left:-300px;
         }
         #canvasPenguin
         {

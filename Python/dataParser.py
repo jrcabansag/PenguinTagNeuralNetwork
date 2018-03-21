@@ -15,10 +15,14 @@ def open_data(file, directionsOnly):
     return np.array(data)
 
 def make_directions_only(data):
+	added_0 = False
 	new_data = []
 	for row in data:
 		if row[1] != 0:
 			new_data.append(row)
+		elif added_0 == False and row[1] == 0:
+			new_data.append(row)
+			added_0 = True
 	return np.array(new_data)
 	
 def write_to_file(file, data):
